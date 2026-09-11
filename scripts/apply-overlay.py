@@ -22,8 +22,24 @@ for name in (
 ):
     shutil.copy2(overlay / "config" / name, assets / name)
 
+# Add the first-run FTB bootstrapper to the upstream launcher source tree.
+java_dir = launcher / "app_pojavlauncher" / "src" / "main" / "java" / "net" / "kdt" / "pojavlaunch"
+java_dir.mkdir(parents=True, exist_ok=True)
+shutil.copy2(overlay / "android" / "MineFtbBootstrap.java", java_dir / "MineFtbBootstrap.java")
+
+# Start the bootstrapper after the launcher's own modloader tracker and progress observers exist.
+launcher_activity = java_dir / "LauncherActivity.java"
+activity_text = launcher_activity.read_text(encoding="utf-8")
+needle = "        mProgressLayout.observe(ProgressLayout.DOWNLOAD_VERSION_LIST);\n"
+replacement = needle + "\n        MineFtbBootstrap.maybeStart(this);\n"
+if "MineFtbBootstrap.maybeStart(this);" not in activity_text:
+    if needle not in activity_text:
+        raise SystemExit("Could not find LauncherActivity bootstrap insertion point")
+    activity_text = activity_text.replace(needle, replacement, 1)
+launcher_activity.write_text(activity_text, encoding="utf-8")
+
 # Rebrand only user-facing launcher strings. Package/application IDs stay upstream for
-# this first build so we do not break native-library/resource assumptions.
+# this first build so native-library/resource assumptions are not broken.
 strings = launcher / "app_pojavlauncher" / "src" / "main" / "res" / "values" / "strings.xml"
 text = strings.read_text(encoding="utf-8")
 text = text.replace(
@@ -35,3 +51,4 @@ strings.write_text(text, encoding="utf-8")
 
 print(f"MineFTB overlay applied to {launcher}")
 print(f"Bundled presets: {assets}")
+print("First-run FTB bootstrapper installed")
