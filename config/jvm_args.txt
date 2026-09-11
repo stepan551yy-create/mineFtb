@@ -1,0 +1,1 @@
+-Xms1024M -Xmx5120M -XX:+UseG1GC -XX:MaxGCPauseMillis=75 -XX:+DisableExplicitGC -Dfile.encoding=UTF-8
