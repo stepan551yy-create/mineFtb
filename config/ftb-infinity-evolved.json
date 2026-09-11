@@ -1,0 +1,14 @@
+{
+  "profileName": "FTB Infinity Evolved 3.1.0",
+  "minecraftVersion": "1.7.10",
+  "forgeVersion": "10.13.4.1614",
+  "modpackVersion": "3.1.0",
+  "javaMajor": 8,
+  "architecture": "arm64",
+  "memoryMb": 5120,
+  "resolutionScalePercent": 75,
+  "renderer": "mobileglues_or_auto",
+  "jvmArgs": "-Xms1024M -Xmx5120M -XX:+UseG1GC -XX:MaxGCPauseMillis=75 -XX:+DisableExplicitGC -Dfile.encoding=UTF-8",
+  "forgeSplashEnabled": false,
+  "targetDevice": "Xiaomi 14 Ultra"
+}
