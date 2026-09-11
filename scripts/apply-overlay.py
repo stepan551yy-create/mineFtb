@@ -22,19 +22,21 @@ for name in (
 ):
     shutil.copy2(overlay / "config" / name, assets / name)
 
-# Add the first-run FTB bootstrapper to the upstream launcher source tree.
+# Add MineFTB's first-run helpers to the upstream launcher source tree.
 java_dir = launcher / "app_pojavlauncher" / "src" / "main" / "java" / "net" / "kdt" / "pojavlaunch"
 java_dir.mkdir(parents=True, exist_ok=True)
 shutil.copy2(overlay / "android" / "MineFtbBootstrap.java", java_dir / "MineFtbBootstrap.java")
+shutil.copy2(overlay / "android" / "MineFtbLocalAccount.java", java_dir / "MineFtbLocalAccount.java")
 
-# Start the bootstrapper after the launcher's own modloader tracker and progress observers exist.
+# Ask for a local username first, then start FTB setup. This runs after the account spinner
+# has registered Amethyst's own local-account listener and after progress observers exist.
 launcher_activity = java_dir / "LauncherActivity.java"
 activity_text = launcher_activity.read_text(encoding="utf-8")
 needle = "        mProgressLayout.observe(ProgressLayout.DOWNLOAD_VERSION_LIST);\n"
-replacement = needle + "\n        MineFtbBootstrap.maybeStart(this);\n"
-if "MineFtbBootstrap.maybeStart(this);" not in activity_text:
+replacement = needle + "\n        MineFtbLocalAccount.ensure(this, () -> MineFtbBootstrap.maybeStart(this));\n"
+if "MineFtbLocalAccount.ensure(this" not in activity_text:
     if needle not in activity_text:
-        raise SystemExit("Could not find LauncherActivity bootstrap insertion point")
+        raise SystemExit("Could not find LauncherActivity MineFTB insertion point")
     activity_text = activity_text.replace(needle, replacement, 1)
 launcher_activity.write_text(activity_text, encoding="utf-8")
 
@@ -51,4 +53,4 @@ strings.write_text(text, encoding="utf-8")
 
 print(f"MineFTB overlay applied to {launcher}")
 print(f"Bundled presets: {assets}")
-print("First-run FTB bootstrapper installed")
+print("Local username chooser + FTB bootstrapper installed")
