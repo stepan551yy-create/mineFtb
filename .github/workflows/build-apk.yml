@@ -1,0 +1,75 @@
+name: Build MineFTB Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout MineFTB overlay
+        uses: actions/checkout@v4
+        with:
+          path: overlay
+
+      - name: Checkout Amethyst Android base
+        uses: actions/checkout@v4
+        with:
+          repository: AngelAuraMC/Amethyst-Android
+          ref: v3_openjdk
+          path: launcher
+          submodules: recursive
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Get Java 8 runtime for Android
+        uses: dawidd6/action-download-artifact@v9
+        with:
+          workflow: build.yml
+          path: launcher/app_pojavlauncher/src/main/assets/components/jre
+          workflow_conclusion: completed
+          repo: AngelAuraMC/angelauramc-openjdk-build
+          branch: buildjre8
+          name: jre8-pojav
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          validate-wrappers: false
+          gradle-version: '9.6.1'
+
+      - name: Apply MineFTB overlay
+        run: python3 overlay/scripts/apply-overlay.py launcher
+
+      - name: Prepare launcher sources
+        working-directory: launcher
+        run: |
+          bash ./scripts/languagelist_updater.sh
+          mkdir -p out
+
+      - name: Build debug APK
+        working-directory: launcher
+        run: |
+          gradle :app_pojavlauncher:assembleDebug
+          cp app_pojavlauncher/build/outputs/apk/debug/app_pojavlauncher-debug.apk out/MineFTB-debug.apk
+          sha256sum out/MineFTB-debug.apk > out/MineFTB-debug.sha256
+
+      - name: Upload MineFTB APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MineFTB-debug-Xiaomi14Ultra
+          path: |
+            launcher/out/MineFTB-debug.apk
+            launcher/out/MineFTB-debug.sha256
+          if-no-files-found: error
